@@ -34,5 +34,13 @@ def speech_to_text(ogg_file_name, lang='ru-RU'):
 
     # Detects speech in the audio file
     response = client.recognize(config_p, audio)
-    return response.results[0].alternatives[0].transcript
+    res = response.results
+    if len(res):
+        alt = res[0].alternatives
+        if len(alt):
+            trans = alt[0].transcript
+            return trans
+    return "Говорите чётко, пожалуйста"
+
+
 

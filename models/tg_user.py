@@ -1,4 +1,8 @@
-from psycopg2.extras import DictCursor
+from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class TgUser:
@@ -8,23 +12,19 @@ class TgUser:
         self.language = language
 
 
-class TgUserModel:
-    def __init__(self, conn):
-        self._conn = conn
-        self._cur = conn.cursor(cursor_factory=DictCursor)
+class __TgUserModel:
+    def __init__(self):
+        client = MongoClient(os.getenv("MONGO_DB"))
+        db = client["startup"]
+        self.table = db["tguser"]
 
-    def insert(self, tg_id, language='ru-RU'):
-        q = 'INSERT INTO tg_user (tg_id, language) VALUES (%s, %s) RETURNING db_id'
-        res = self._cur.execute(q, (tg_id, language,))
-        self._conn.commit()
-        return res
+    def insert(self, tg_id, lang):
+        if bool(self.get_user(tg_id)):
+            return None
+        self.table.insert_one({"tg_id": tg_id, "lang": lang})
 
-    def is_user(self, tg_id):
-        q = 'SELECT * FROM tg_user WHERE tg_id = %s'
-        res = self._cur.execute(q, (tg_id,))
-        return res
+    def get_user(self, tg_id):
+        return self.table.find_one({"tg_id": tg_id})
 
-    def get_lang(self, tg_id):
-        q = 'SELECT tg_user.language FROM tg_user WHERE tg_id = %s'
-        res = self._cur.execute(q, (tg_id,))
-        return res
+
+TgUserModel = __TgUserModel()
